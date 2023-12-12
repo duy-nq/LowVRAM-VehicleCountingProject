@@ -1,0 +1,10 @@
+video/Footage_01.mp4
+yolov8m.pt
+yolov8n.pt
+yolov8s.pt
+yolov8x.pt
+runs/detect/predict/Zinedine-Zidane-ball-final-World-Cup-Italy-2006.jpg
+runs/detect/predict2/Zinedine-Zidane-ball-final-World-Cup-Italy-2006.jpg
+runs/detect/predict3/Zinedine-Zidane-ball-final-World-Cup-Italy-2006.jpg
+__pycache__/method.cpython-39.pyc
+__pycache__/yolo.cpython-39.pyc
