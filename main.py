@@ -1,6 +1,8 @@
 from ultralytics import YOLO
 import cv2 as cv
-from method import remove_unnecessary_info, draw_centered_point, tensor_list_to_int, tensor_lol_to_float
+from method import remove_unnecessary_info, draw_centered_point, tensor_list_to_int, tensor_lol_to_float, write_to_file
+from draw import display_time, display_nov
+import timer
 
 def read_video(video_path:str) -> cv.VideoCapture:
     cap = cv.VideoCapture(video_path)
@@ -32,23 +34,47 @@ def extract_frame(video:cv.VideoCapture):
     cv.destroyAllWindows()
 
 def detect_video(video):
+    # Frame to capture
     frame_to_cap = 0
+    frame_skip = 15
     
+    # Number of vehicles in the counting space
+    new_nov = 0
+    total_nov = 0
+
+    # Base on intensity of traffic, scale to determine the counting space
+    scale = 0
+
+    # Handle gap between 2 groups of vehicles
+    no_nov = 0
+    is_gap = True
+    
+    # Model to detect vehicles
     yolo = YOLO('yolov8m.pt')
+
+    # Data to write to file
+    group = 1
+    tmp_time = timer.START_TIME
+    data = {}
+    
     while video.isOpened():
-        # Read frame
         ret, frame = video.read()
         video.set(cv.CAP_PROP_POS_FRAMES, frame_to_cap)
         
-        # Out of frame, exit here
         if not ret:
             print("Can't receive frame (stream end?). Exiting ...")
             break
 
-        frame = cv.resize(frame, (640, 50))
+        # Resize frame
+        frame = cv.resize(frame, (1024, 576))
 
-        # Predict base on frame
-        results = yolo.predict(frame, device='0')
+        # Display fake time
+        frame = display_time(frame, frame_skip)
+
+        d_space = frame[200:450, 300:650]
+
+        # Make prediction
+        results = yolo.predict(d_space, device='0')
 
         zipped = [z for z in zip(tensor_list_to_int(results[0].boxes.cls), 
                                     tensor_list_to_int(results[0].boxes.conf),
@@ -56,10 +82,58 @@ def detect_video(video):
             
         vehicle_detected = remove_unnecessary_info(zipped)
 
-        frame = draw_centered_point(frame, vehicle_detected)
+        try:
+            if (len(vehicle_detected) < 8):
+                scale = 0
+            elif (len(vehicle_detected) < 15):
+                scale = 10
+            else:
+                scale = 20
 
+            for obj in vehicle_detected:               
+                if obj[2][1] >= 60 and obj[2][1] < 160:
+                    is_gap = False
+                if obj[2][1] >= 160+scale and obj[2][1] <= 250-scale:
+                    new_nov += 1
+
+            if (frame_to_cap == 0):
+                total_nov = len(vehicle_detected)-new_nov
+            else:
+                total_nov += new_nov
+            
+            display_nov(frame, new_nov, 150, 'Count-space')
+            display_nov(frame, len(vehicle_detected), 100, 'ALLNOV')
+            display_nov(frame, total_nov, 200, 'Total')
+        except:
+            display_nov(frame, 0, 100, 'ALLNOV')
+            is_gap = True
+
+        if (is_gap == True):
+            no_nov += 1
+
+            if (no_nov == 3):
+                data['group'] = group
+                data['duration'] = timer.get_time_now() - tmp_time
+                data['nov'] = total_nov
+
+                write_to_file('data.json', data)
+                
+                total_nov = 0
+                no_nov = 0
+                group += 1
+                tmp_time = timer.get_time_now()
+        else:
+            is_gap = True
+            no_nov = 0         
+
+        new_nov = 0
+
+        d_space = draw_centered_point(d_space, vehicle_detected)
+
+        cv.imshow('d_space', d_space)
         cv.imshow('frame', frame)
-        frame_to_cap += 15
+        
+        frame_to_cap += frame_skip
         if cv.waitKey(1) == ord('q'):
             break
     
@@ -70,9 +144,10 @@ def detect_image(image):
     yolo = YOLO('yolov8s.pt')
     # Inference
     results = yolo.predict(image, show=True)
+    print(results)
 
 def main():
-    video = cv.VideoCapture('video/Footage_01.mp4')
+    video = cv.VideoCapture('video\Footage_04.mp4')
 
     detect_video(video)
 

@@ -1,5 +1,6 @@
 import torch
 import cv2 as cv
+import json
 
 UNWANTED_CLASS = [0,4,6]
 COLOR_FOR_CLASS = {
@@ -16,7 +17,7 @@ def tensor_lol_to_float(tensor_list):
     """
     return [[float(val) for val in sub_list] for sub_list in tensor_list.tolist()]
 
-def tensor_list_to_int(tensor_list: torch.Tensor):
+def tensor_list_to_int(tensor_list: torch.Tensor):   
     return [int(val) for val in tensor_list.tolist()]
 
 def remove_unnecessary_info(zipped: list):
@@ -42,3 +43,9 @@ def draw_centered_point(image, vd: list):
         cv.circle(image, (int(point[i][0]), int(point[i][1])), 5, COLOR_FOR_CLASS.get(vclass[i]), -1)
     
     return image
+
+def write_to_file(file_name, data: dict):   
+    with open(file_name, 'a') as f:
+        f.write(json.dumps(data))
+    
+    f.close()
