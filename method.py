@@ -46,6 +46,6 @@ def draw_centered_point(image, vd: list):
 
 def write_to_file(file_name, data: dict):   
     with open(file_name, 'a') as f:
-        f.write(json.dumps(data))
+        f.write(json.dumps(data)+',')
     
     f.close()

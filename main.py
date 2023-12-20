@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 import cv2 as cv
-from method import remove_unnecessary_info, draw_centered_point, tensor_list_to_int, tensor_lol_to_float, write_to_file
+from method import draw_centered_point, tensor_list_to_int, tensor_lol_to_float, write_to_file
 from draw import display_time, display_nov
 import timer
 
@@ -146,7 +146,7 @@ def detect_image(image):
     print(results)
 
 def main():
-    video = cv.VideoCapture('video\Footage_04.mp4')
+    video = cv.VideoCapture('static/videos/Footage_04.mp4')
 
     detect_video(video)
 
